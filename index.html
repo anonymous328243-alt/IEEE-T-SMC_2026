@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Offline Distributional RL with Multi-step Returns for Combat Decision-making</title>
+  <meta name="description" content="Project page for Offline Distributional Reinforcement Learning with Multi-step Returns for Combat Decision-making." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@400;700;900&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#3f4533;
+      --bg-deep:#24291f;
+      --bg-mid:#4e553f;
+      --panel:#f2efe3;
+      --panel-2:#e7e1cf;
+      --panel-dark:#303626;
+      --ink:#161b12;
+      --ink-2:#26301d;
+      --muted:#5d624f;
+      --line:#bbb39c;
+      --line-dark:rgba(235,230,208,.18);
+      --accent:#c8a24a;
+      --accent-2:#8fb36a;
+      --danger:#b14c3c;
+      --blueprint:#334150;
+      --shadow:0 18px 44px rgba(0,0,0,.30);
+      --max:1500px;
+      --radius:8px;
+    }
+
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{
+      margin:0;
+      color:var(--ink);
+      font-family:"Roboto Condensed","Arial Narrow","DIN Condensed","Noto Sans KR",Arial,sans-serif;
+      background:
+        linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px),
+        radial-gradient(circle at 12% -10%, rgba(199,162,74,.22), transparent 34%),
+        radial-gradient(circle at 92% 4%, rgba(143,179,106,.18), transparent 28%),
+        linear-gradient(180deg,var(--bg) 0%, var(--bg-deep) 100%);
+      background-size:32px 32px,32px 32px,auto,auto,auto;
+      line-height:1.55;
+    }
+    a{color:inherit;text-decoration:none}
+    img{display:block;max-width:100%}
+
+    .nav{
+      position:sticky;
+      top:0;
+      z-index:40;
+      background:rgba(34,39,29,.92);
+      backdrop-filter:blur(10px);
+      border-bottom:1px solid var(--line-dark);
+    }
+    .nav-inner{
+      max-width:var(--max);
+      margin:0 auto;
+      padding:12px 28px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:24px;
+    }
+    .brand{
+      color:#f3ecd8;
+      font-weight:900;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      font-size:1rem;
+    }
+    .brand:before{
+      content:"▣";
+      color:var(--accent);
+      margin-right:10px;
+    }
+    .nav-links{display:flex;gap:18px;color:#d5cfb8;font-size:.88rem;text-transform:uppercase;letter-spacing:.08em;font-weight:800}
+    .nav-links a{padding:4px 0;border-bottom:2px solid transparent;transition:.16s ease}
+    .nav-links a:hover{color:#fff;border-color:var(--accent)}
+
+    .container{max-width:var(--max);margin:0 auto;padding:0 28px}
+
+    .hero{
+      padding:78px 0 38px;
+      color:#f5efd9;
+    }
+    .hero-grid{
+      display:grid;
+      grid-template-columns:minmax(0,1.16fr) 420px;
+      gap:30px;
+      align-items:stretch;
+    }
+    .status-line{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      margin-bottom:22px;
+    }
+    .tag{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      border:1px solid var(--line-dark);
+      background:rgba(28,33,23,.65);
+      padding:7px 10px;
+      color:#ddd5bd;
+      font-size:.78rem;
+      font-weight:900;
+      text-transform:uppercase;
+      letter-spacing:.1em;
+    }
+    .tag:before{content:"";width:8px;height:8px;background:var(--accent);display:inline-block}
+    h1{
+      max-width:900px;
+      margin:0;
+      font-size:clamp(2.35rem,4.7vw,4.6rem);
+      line-height:1.07;
+      letter-spacing:-.012em;
+      word-spacing:.045em;
+      text-transform:uppercase;
+      font-weight:950;
+    }
+    .subtitle{
+      max-width:930px;
+      margin:24px 0 0;
+      color:#d2cab2;
+      font-size:clamp(1rem,1.3vw,1.22rem);
+      font-weight:700;
+    }
+    .authors{margin:18px 0 0;color:#bfb79f;font-size:.95rem;font-weight:700}
+    .authors sup{font-size:.68em;line-height:0;vertical-align:super;margin-left:1px}
+    .authors .affil{white-space:nowrap}
+    .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:28px}
+    .button{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-height:44px;
+      padding:0 16px;
+      border:1px solid var(--line-dark);
+      background:rgba(242,239,227,.10);
+      color:#f7f1dd;
+      font-weight:950;
+      text-transform:uppercase;
+      letter-spacing:.08em;
+      font-size:.82rem;
+      transition:.16s ease;
+    }
+    .button.primary{background:var(--accent);color:#1b1c14;border-color:var(--accent)}
+    .button:hover{transform:translateY(-2px);background:rgba(242,239,227,.16)}
+    .button.primary:hover{background:#d6b45e}
+
+    .mission-panel{
+      background:rgba(24,29,20,.68);
+      border:1px solid var(--line-dark);
+      box-shadow:var(--shadow);
+      padding:18px;
+      display:grid;
+      grid-template-columns:1fr;
+      gap:10px;
+      align-content:start;
+    }
+    .mission-title{
+      margin:0 0 2px;
+      color:#f5efd9;
+      text-transform:uppercase;
+      letter-spacing:.12em;
+      font-size:.86rem;
+      font-weight:950;
+      border-bottom:1px solid var(--line-dark);
+      padding-bottom:12px;
+    }
+    .mission-item{
+      border:1px solid var(--line-dark);
+      background:rgba(255,255,255,.045);
+      padding:10px 12px;
+    }
+    .mission-item span{display:block;color:#a9b58e;text-transform:uppercase;letter-spacing:.11em;font-size:.70rem;font-weight:950}
+    .mission-item strong{display:block;color:#f4ecd2;font-size:.94rem;margin-top:4px;line-height:1.28}
+
+    section{padding:42px 0}
+    .section-head{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-end;
+      gap:28px;
+      margin-bottom:18px;
+      color:#f5efd9;
+    }
+    .eyebrow{
+      color:var(--accent);
+      font-weight:950;
+      text-transform:uppercase;
+      letter-spacing:.14em;
+      font-size:.77rem;
+      margin-bottom:7px;
+    }
+    h2{
+      margin:0;
+      font-size:clamp(1.75rem,2.8vw,2.8rem);
+      line-height:1.04;
+      letter-spacing:-.035em;
+      text-transform:uppercase;
+      font-weight:950;
+    }
+    h3{
+      margin:0 0 10px;
+      font-size:1.08rem;
+      letter-spacing:.015em;
+      text-transform:uppercase;
+      font-weight:950;
+      color:var(--ink-2);
+    }
+    p{margin:0}
+    .note{color:var(--muted);font-size:.98rem;font-weight:650}
+
+    .card{
+      background:linear-gradient(180deg,var(--panel),var(--panel-2));
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+    }
+    .paper-card{
+      display:grid;
+      grid-template-columns:minmax(420px,.94fr) minmax(440px,1.06fr);
+      gap:30px;
+      align-items:center;
+      padding:clamp(22px,3.2vw,40px);
+    }
+    .paper-card.reverse{grid-template-columns:minmax(460px,1.08fr) minmax(390px,.92fr)}
+    .text-block{max-width:720px}
+    .text-block .note{font-size:1rem;line-height:1.7}
+    .list{margin:16px 0 0;padding-left:20px;color:var(--muted);font-weight:700}
+    .list li{margin:7px 0}
+    .list li::marker{color:var(--accent)}
+
+    .figure-box{
+      overflow:hidden;
+      border-radius:4px;
+      border:1px solid #a8a087;
+      background:#fafafa;
+      box-shadow:0 12px 26px rgba(0,0,0,.16);
+    }
+    .figure-box img{
+      width:100%;
+      height:auto;
+      background:#fff;
+      object-fit:contain;
+    }
+    .hero-figure img{max-height:460px}
+    .figure-caption{
+      padding:10px 13px;
+      border-top:1px solid #c8c0aa;
+      background:#e9e3d3;
+      color:#575d4d;
+      font-size:.86rem;
+      font-weight:800;
+    }
+
+    .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+    .feature{padding:22px;min-height:205px;position:relative;overflow:hidden}
+    .feature:after{
+      content:attr(data-no);
+      position:absolute;
+      right:12px;
+      bottom:-34px;
+      font-size:6.5rem;
+      font-weight:950;
+      color:rgba(63,69,51,.10);
+      line-height:1;
+    }
+    .icon{
+      width:42px;
+      height:42px;
+      display:grid;
+      place-items:center;
+      border-radius:2px;
+      background:var(--panel-dark);
+      color:var(--accent);
+      font-weight:950;
+      margin-bottom:14px;
+      font-size:.95rem;
+    }
+
+    .method{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:16px}
+    .step{padding:22px;position:relative;overflow:hidden;min-height:178px}
+    .step:before{
+      content:attr(data-step);
+      display:inline-block;
+      margin-bottom:14px;
+      padding:4px 8px;
+      background:var(--panel-dark);
+      color:var(--accent);
+      font-weight:950;
+      letter-spacing:.08em;
+      font-size:.76rem;
+    }
+
+    .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:16px}
+    .metric{padding:16px;background:#ebe5d3;box-shadow:none}
+    .metric-value{font-size:2rem;font-weight:950;letter-spacing:-.045em;color:#39452a;margin-bottom:0;line-height:1}
+    .metric-label{font-weight:950;text-transform:uppercase;font-size:.82rem;color:#272d22;margin-top:6px}
+    .metric .note{font-size:.82rem}
+
+    .png-panel-grid{display:grid;gap:14px;margin-top:14px;align-items:start}
+    .png-panel-grid.two{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .png-panel-grid.four{grid-template-columns:repeat(4,minmax(0,1fr))}
+    .png-panel{
+      overflow:hidden;
+      border-radius:4px;
+      border:1px solid #a8a087;
+      background:#fff;
+      box-shadow:0 10px 22px rgba(0,0,0,.13);
+    }
+    .png-panel-title{
+      padding:9px 12px;
+      border-bottom:1px solid #c8c0aa;
+      background:#e9e3d3;
+      font-weight:950;
+      font-size:.84rem;
+      text-transform:uppercase;
+      letter-spacing:.04em;
+      color:#2f3728;
+    }
+    .png-panel img{
+      width:100%;
+      height:auto;
+      object-fit:contain;
+      padding:0;
+      background:#fff;
+    }
+    .png-panel.compact img{height:auto}
+    .png-panel.legend img{height:auto;max-height:none;padding:0}
+    .png-panel-grid.four{gap:16px 16px}
+    .png-panel-grid.four .png-panel-title{font-size:.78rem;letter-spacing:.035em;white-space:normal;line-height:1.25}
+
+    .results-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;margin-top:16px}
+    .table-wrap{width:100%;max-width:100%;overflow-x:hidden}
+    .table-wrap table{min-width:0;table-layout:fixed}
+    table{width:100%;border-collapse:collapse;border-radius:4px;overflow:hidden;background:#f8f6ee;font-size:.88rem;font-weight:700}
+    th,td{padding:10px 10px;border-bottom:1px solid #d0c8b1;text-align:left;vertical-align:top;overflow-wrap:anywhere}
+    th{background:#dcd5c1;color:#363d2e;font-weight:950;text-transform:uppercase;font-size:.76rem;letter-spacing:.035em}
+    tr:last-child td{border-bottom:0}
+    .highlight{color:#283f18;font-weight:950}
+    .orange{color:#8a5a19;font-weight:950}
+    .green{color:#40622c;font-weight:950}
+    .bibtex{padding:20px;overflow-x:auto;background:#f1ecd9}
+    pre{margin:0;white-space:pre-wrap;color:#252b1f;font-size:.88rem;font-family:"Roboto Mono","Courier New",monospace;line-height:1.55}
+    footer{padding:38px 0 64px;text-align:center;color:#d2cab2;font-weight:700}
+
+    .blueprint-card{
+      background:linear-gradient(180deg,#334150,#222d37);
+      color:#f0f4f0;
+      border-color:rgba(255,255,255,.14);
+    }
+    .blueprint-card h3{color:#f0f4f0}
+    .blueprint-card .note{color:#cbd5d7}
+    .mdp-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px}
+    .mdp-item{border:1px solid rgba(255,255,255,.18);padding:13px;background:rgba(255,255,255,.05)}
+    .mdp-item span{display:block;color:#c8a24a;text-transform:uppercase;letter-spacing:.1em;font-size:.72rem;font-weight:950;margin-bottom:6px}
+    .mdp-item code{font-family:"Roboto Mono","Courier New",monospace;color:#f6f0d8;font-size:.9rem}
+    .formula{
+      font-family:"Roboto Mono","Courier New",monospace;
+      color:#f6f0d8;
+      font-size:.92rem;
+      line-height:1.75;
+      letter-spacing:0;
+      word-spacing:0;
+      white-space:normal;
+    }
+    .formula sub{font-size:.68em;vertical-align:-.32em;margin-left:1px}
+    .formula sup{font-size:.64em;vertical-align:.62em;margin-left:1px}
+    .formula .op{color:#d7c28a}
+
+
+
+    .zoomable{cursor:zoom-in}
+    .image-modal{
+      position:fixed;
+      inset:0;
+      z-index:1000;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:28px;
+      background:rgba(10,13,9,.82);
+    }
+    .image-modal.open{display:flex}
+    .image-modal-inner{
+      position:relative;
+      width:min(1280px,96vw);
+      max-height:92vh;
+      border:1px solid rgba(235,230,208,.28);
+      background:#11160f;
+      box-shadow:0 24px 70px rgba(0,0,0,.55);
+      padding:12px;
+    }
+    .image-modal img{
+      width:100%;
+      max-height:84vh;
+      object-fit:contain;
+      background:#fff;
+      cursor:zoom-out;
+    }
+    .image-modal-close{
+      position:absolute;
+      top:10px;
+      right:10px;
+      width:38px;
+      height:38px;
+      border:1px solid rgba(235,230,208,.28);
+      background:rgba(24,29,20,.88);
+      color:#f5efd9;
+      font-size:24px;
+      line-height:1;
+      cursor:pointer;
+    }
+    .image-modal-caption{
+      margin-top:8px;
+      color:#d2cab2;
+      font-weight:800;
+      font-size:.9rem;
+    }
+
+
+
+    /* Motion and interaction layer */
+    :root{
+      --motion-fast:160ms;
+      --motion-med:260ms;
+      --hover-lift:-6px;
+      --hover-scale:1.015;
+    }
+
+    .nav,
+    .button,
+    .tag,
+    .mission-item,
+    .card,
+    .figure-box,
+    .png-panel,
+    .metric,
+    .step,
+    .feature,
+    .mdp-item,
+    th,
+    td{
+      transition:
+        transform var(--motion-med) ease,
+        background-color var(--motion-med) ease,
+        border-color var(--motion-med) ease,
+        box-shadow var(--motion-med) ease,
+        color var(--motion-med) ease,
+        filter var(--motion-med) ease,
+        opacity var(--motion-med) ease;
+    }
+
+    .nav.scrolled{
+      background:rgba(26,31,22,.97);
+      box-shadow:0 12px 32px rgba(0,0,0,.28);
+    }
+
+    .tag:hover{
+      transform:translateY(-2px);
+      border-color:rgba(200,162,74,.55);
+      background:rgba(200,162,74,.14);
+      color:#fff7df;
+    }
+
+    .button:hover{
+      transform:translateY(-3px) scale(1.025);
+      border-color:rgba(245,239,217,.34);
+      box-shadow:0 12px 24px rgba(0,0,0,.20);
+    }
+
+    .mission-item:hover{
+      transform:translateX(4px);
+      border-color:rgba(200,162,74,.42);
+      background:rgba(200,162,74,.075);
+    }
+
+    .card:hover{
+      transform:translateY(var(--hover-lift));
+      box-shadow:0 24px 58px rgba(0,0,0,.36);
+      border-color:#c8b98f;
+    }
+
+    .paper-card:hover,
+    .blueprint-card:hover{
+      transform:translateY(-4px);
+    }
+
+    .feature:hover .icon,
+    .step:hover:before{
+      background:#1e2419;
+      color:#e2bd5f;
+      transform:scale(1.06);
+    }
+
+    .feature:hover:after{
+      color:rgba(63,69,51,.18);
+      transform:translateY(-6px);
+    }
+
+    .figure-box:hover,
+    .png-panel:hover{
+      transform:translateY(-5px);
+      border-color:#c8a24a;
+      box-shadow:0 20px 42px rgba(0,0,0,.24);
+    }
+
+    .figure-box:hover img,
+    .png-panel:hover img{
+      filter:contrast(1.035) saturate(1.035);
+      transform:scale(var(--hover-scale));
+    }
+
+    .figure-box img,
+    .png-panel img{
+      transition:transform var(--motion-med) ease, filter var(--motion-med) ease;
+      transform-origin:center center;
+    }
+
+    .metric:hover{
+      background:#f3ecd8;
+      transform:translateY(-4px);
+      border-color:#c8a24a;
+    }
+
+    .metric:hover .metric-value{
+      color:#7b5b18;
+    }
+
+    .mdp-item:hover{
+      transform:translateY(-3px);
+      border-color:rgba(200,162,74,.55);
+      background:rgba(200,162,74,.09);
+    }
+
+    tbody tr{
+      transition:background-color var(--motion-fast) ease, transform var(--motion-fast) ease;
+    }
+    tbody tr:hover{
+      background:#efe7cf;
+    }
+    tbody tr:hover td:first-child{
+      color:#6f5016;
+    }
+
+    .hero-grid > div:first-child,
+    .mission-panel{
+      animation:heroEnter .72s ease both;
+    }
+    .mission-panel{animation-delay:.08s}
+
+    @keyframes heroEnter{
+      from{opacity:0;transform:translateY(18px)}
+      to{opacity:1;transform:translateY(0)}
+    }
+
+    .reveal{
+      opacity:0;
+      transform:translateY(22px);
+      transition:opacity .62s ease, transform .62s ease;
+    }
+    .reveal.in-view{
+      opacity:1;
+      transform:translateY(0);
+    }
+    .reveal.delay-1{transition-delay:.06s}
+    .reveal.delay-2{transition-delay:.12s}
+    .reveal.delay-3{transition-delay:.18s}
+
+    @media(prefers-reduced-motion:reduce){
+      *,*::before,*::after{
+        animation:none!important;
+        transition:none!important;
+        scroll-behavior:auto!important;
+      }
+      .card:hover,
+      .figure-box:hover,
+      .png-panel:hover,
+      .button:hover,
+      .tag:hover,
+      .mission-item:hover,
+      .metric:hover,
+      .mdp-item:hover{
+        transform:none!important;
+      }
+      .reveal{opacity:1!important;transform:none!important}
+    }
+
+    @media(max-width:1160px){
+      .hero-grid,.paper-card,.paper-card.reverse{grid-template-columns:1fr}
+      .mission-panel{max-width:700px}
+      .grid-3,.method,.metrics,.mdp-grid{grid-template-columns:repeat(2,1fr)}
+      .png-panel-grid.four{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .results-grid{grid-template-columns:1fr}
+    }
+    @media(max-width:760px){
+      .nav-links{display:none}
+      .container,.nav-inner{padding-left:18px;padding-right:18px}
+      .hero{padding-top:54px}
+      section{padding:34px 0}
+      .section-head{display:block}
+      .grid-3,.method,.metrics,.results-grid,.mdp-grid,.png-panel-grid.two,.png-panel-grid.four{grid-template-columns:1fr}
+      h1{font-size:clamp(2.05rem,12vw,3.5rem);line-height:1.08;letter-spacing:-.006em}
+      .paper-card{padding:18px}
+      .png-panel img,.png-panel.compact img{height:auto;max-height:none}
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="brand" href="#">Combat Offline RL</a>
+      <div class="nav-links">
+        <a href="#abstract">Abstract</a>
+        <a href="#environment">Environment</a>
+        <a href="#method">Method</a>
+        <a href="#results">Results</a>
+      </div>
+    </div>
+  </nav>
+
+  <main>
+    <header class="hero container">
+      <div class="hero-grid">
+        <div>
+          <div class="status-line">
+            <div class="tag">IEEE TSMC: Systems</div>
+            <div class="tag">Offline RL</div>
+            <div class="tag">Distributional Critic</div>
+            <div class="tag">Multi-step Return</div>
+          </div>
+          <h1>Offline Distributional Reinforcement Learning with Multi-step Returns for Combat Decision-making</h1>
+          <p class="subtitle">A practical offline reinforcement learning framework for reliable long-horizon combat decision-making under dynamic mission objectives, target uncertainty, and ammunition-resource constraints.</p>
+          <p class="authors"><strong>Guhyeon Kang<sup>1</sup></strong>, <strong>Sangeun Park<sup>1</sup></strong>, <strong>Jaehwi Lee<sup>2</sup></strong>, <strong>Minhae Kwon<sup>1</sup></strong> · <span class="affil"><sup>1</sup>SungKyunKwan University</span> / <span class="affil"><sup>2</sup>Soongsil University</span></p>
+          <div class="actions">
+            <a class="button primary" href="main(6).pdf">Paper PDF</a>
+            <a class="button" href="#method">Method</a>
+            <a class="button" href="#results">Results</a>
+          </div>
+        </div>
+        <aside class="mission-panel" aria-label="Project summary">
+          <h2 class="mission-title">Mission profile</h2>
+          <div class="mission-item"><span>Training regime</span><strong>Offline learning from pre-collected combat datasets</strong></div>
+          <div class="mission-item"><span>Combat setup</span><strong>Friendly units engage a moving target under resource limits</strong></div>
+          <div class="mission-item"><span>State signal</span><strong>Desired effect, target type, defense, condition, distance, inventory</strong></div>
+          <div class="mission-item"><span>Decision variable</span><strong>Ammunition type + consumption level</strong></div>
+          <div class="mission-item"><span>Value estimator</span><strong>Categorical distribution over multi-step returns</strong></div>
+          <div class="mission-item"><span>Offline risk control</span><strong>Advantage-weighted behavior cloning on high-valued actions</strong></div>
+          <div class="mission-item"><span>Evaluation focus</span><strong>Mission achievement, cost efficiency, and total reward</strong></div>
+        </aside>
+      </div>
+    </header>
+
+    <section class="container" id="abstract">
+      <div class="section-head">
+        <div><div class="eyebrow">01 / Abstract</div><h2>Learning from pre-collected combat data without online interaction.</h2></div>
+      </div>
+      <div class="card paper-card">
+        <div class="text-block">
+          <h3>Problem statement</h3>
+          <p class="note">Accurate and reliable combat decision-making requires policies that operate under dynamic target information, limited ammunition resources, and commander-specified mission objectives. Online trial-and-error is unsafe or impractical in mission-critical environments, while conventional one-step TD targets can produce short-sighted value estimates that fail to capture delayed mission outcomes.</p>
+          <p class="note" style="margin-top:12px">This project page summarizes an offline distributional RL framework that learns entirely from pre-collected combat data. The method combines multi-step return targets with categorical value estimators, then uses an advantage-aware actor objective to improve policy learning while avoiding unreliable out-of-distribution actions.</p>
+          <ul class="list">
+            <li>Combat decisions must select both ammunition type and consumption level.</li>
+            <li>The policy must match a commander-specified desired target condition, not simply maximize damage.</li>
+            <li>Distributional value estimation stabilizes long-horizon learning by modeling return uncertainty rather than a single scalar value.</li>
+            <li>Offline RL must avoid out-of-distribution action errors while still learning from mixed-quality datasets.</li>
+          </ul>
+        </div>
+        <div class="figure-box hero-figure">
+          <img class="zoomable" src="Figure/fig1_3-1.png" alt="Combat environment illustration" />
+          <div class="figure-caption">Combat environment: sequential ammunition decisions aim to match the target's final condition with the mission objective.</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="container" id="contributions">
+      <div class="section-head"><div><div class="eyebrow">02 / Key contributions</div><h2>Distributional value learning for safer long-horizon offline RL.</h2></div></div>
+      <div class="grid-3">
+        <div class="card feature" data-no="01"><div class="icon">01</div><h3>Realistic MDP formulation</h3><p class="note">This work formulates dynamic combat decision-making with desired effects, target type, defensive level, target distance, target condition, and ammunition inventory.</p></div>
+        <div class="card feature" data-no="02"><div class="icon">02</div><h3>Multi-step distributional critic</h3><p class="note">Multi-step returns improve long-horizon value targets, while categorical distributional estimation mitigates high target variance.</p></div>
+        <div class="card feature" data-no="03"><div class="icon">03</div><h3>Advantage-aware actor</h3><p class="note">The actor combines advantage-aware policy evaluation with advantage-weighted behavioral cloning to prefer high-quality dataset actions.</p></div>
+      </div>
+    </section>
+
+    <section class="container" id="environment">
+      <div class="section-head"><div><div class="eyebrow">03 / Combat decision process</div><h2>Each decision controls what to use and how much to consume.</h2></div></div>
+      <div class="card paper-card reverse">
+        <div class="figure-box">
+          <img class="zoomable" src="Figure/fig2_4-1.png" alt="Decision-making process" />
+          <div class="figure-caption">Agent action: select ammunition type and ammunition consumption according to target and environment states.</div>
+        </div>
+        <div class="text-block">
+          <h3>State, action, and objective</h3>
+          <p class="note">The state includes commander desired effect, target type, defensive level, target condition, distance, and remaining ammunition inventory. The action is a two-dimensional vector: ammunition type and consumption proportion. The learned policy minimizes the gap between final target condition and desired commander effect.</p>
+          <div class="card blueprint-card" style="margin-top:16px;padding:18px;box-shadow:none">
+            <h3>MDP compact view</h3>
+            <div class="mdp-grid">
+              <div class="mdp-item"><span>State</span><div class="formula">s<sub>t</sub> <span class="op">=</span> [v<sub>e</sub>, k<sub>e</sub>, b<sub>e</sub>, h<sub>t</sub>, d<sub>t</sub>, l<sub>t</sub>]</div></div>
+              <div class="mdp-item"><span>Action</span><div class="formula">a<sub>t</sub> <span class="op">=</span> [a<sup>ammo</sup><sub>t</sub>, a<sup>cost</sup><sub>t</sub>]</div></div>
+              <div class="mdp-item"><span>Objective</span><div class="formula">π<sup>*</sup> <span class="op">=</span> arg min<sub>π</sub> |h<sub>ve</sub> − h<sub>T</sub>|</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="container" id="method">
+      <div class="section-head"><div><div class="eyebrow">04 / Method</div><h2>Offline distributional actor-critic with multi-step returns.</h2></div></div>
+      <div class="card paper-card">
+        <div class="text-block">
+          <h3>Framework overview</h3>
+          <p class="note">The framework trains from a fixed replay buffer. A value network and critic network learn categorical return distributions using cross-entropy losses, and the actor network is updated with an advantage-aware objective. This design improves long-horizon value prediction while controlling instability from multi-step targets.</p>
+          <ul class="list">
+            <li><span class="highlight">Categorical value estimation</span> models a full return distribution rather than only a scalar expectation.</li>
+            <li><span class="orange">Multi-step returns</span> include delayed mission effects in Bellman targets.</li>
+            <li><span class="green">Advantage-weighted BC</span> imitates high-valued dataset actions more strongly than suboptimal ones.</li>
+          </ul>
+        </div>
+        <div class="figure-box">
+          <img class="zoomable" src="Figure/methodology_5-1.png" alt="Offline distributional RL actor-critic framework" />
+          <div class="figure-caption">Offline distributional RL based on an actor-critic framework.</div>
+        </div>
+      </div>
+      <div class="method">
+        <div class="card step" data-step="STEP 01"><h3>Policy evaluation</h3><p class="note">Estimate value and critic return distributions through categorical Bellman targets.</p></div>
+        <div class="card step" data-step="STEP 02"><h3>Long-horizon backup</h3><p class="note">Replace one-step TD targets with n-step returns to reflect delayed outcomes.</p></div>
+        <div class="card step" data-step="STEP 03"><h3>Policy improvement</h3><p class="note">Train the actor with advantage-aware evaluation and weighted behavior cloning.</p></div>
+      </div>
+    </section>
+
+    <section class="container" id="results">
+      <div class="section-head"><div><div class="eyebrow">05 / Simulation results</div><h2>Faster convergence and stronger offline combat performance.</h2></div></div>
+      <div class="card paper-card reverse">
+        <div>
+          <div class="png-panel-grid two" style="margin-top:0">
+            <div class="png-panel">
+              <div class="png-panel-title">Value loss convergence</div>
+              <img class="zoomable" src="Figure/value_loss_converge_3-1.png" alt="Value loss convergence" />
+            </div>
+            <div class="png-panel">
+              <div class="png-panel-title">Critic loss convergence</div>
+              <img class="zoomable" src="Figure/critic_loss_converge_3-1.png" alt="Critic loss convergence" />
+            </div>
+          </div>
+          <div class="figure-caption">Categorical estimation converges faster than regression-based estimation for value and critic networks.</div>
+        </div>
+        <div class="text-block">
+          <h3>Convergence speed</h3>
+          <p class="note">The categorical method reaches 90% of its final convergence value substantially faster than the regression-based method. For the value network, the categorical method converges in 8.2 epochs versus 16.8 epochs. For the critic network, it converges in 14.6 epochs versus 34.4 epochs.</p>
+          <div class="metrics">
+            <div class="card metric"><div class="metric-value">8.2</div><div class="metric-label">Value epochs</div><p class="note">Categorical</p></div>
+            <div class="card metric"><div class="metric-value">16.8</div><div class="metric-label">Value epochs</div><p class="note">Regression</p></div>
+            <div class="card metric"><div class="metric-value">14.6</div><div class="metric-label">Critic epochs</div><p class="note">Categorical</p></div>
+            <div class="card metric"><div class="metric-value">34.4</div><div class="metric-label">Critic epochs</div><p class="note">Regression</p></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:16px;padding:clamp(20px,3vw,32px)">
+        <h3>Multi-step size analysis</h3>
+        <p class="note">The proposed method consistently outperforms offline baselines across multi-step sizes. The best multi-step size aligns with the mission achievement timestep: around n=7 for Final and n=10 for Final+Medium.</p>
+        <div class="png-panel-grid four">
+          <div class="png-panel compact"><div class="png-panel-title">Final dataset · Achievement</div><img class="zoomable" src="Figure/Final_achieve_3-1.png" alt="Final dataset achievement across multi-step sizes" /></div>
+          <div class="png-panel compact"><div class="png-panel-title">Final dataset · Cost efficiency</div><img class="zoomable" src="Figure/Final_ce_2-1.png" alt="Final dataset cost efficiency across multi-step sizes" /></div>
+          <div class="png-panel compact"><div class="png-panel-title">Final+Medium dataset · Achievement</div><img class="zoomable" src="Figure/FM_achieve_3-1.png" alt="Final plus Medium dataset achievement across multi-step sizes" /></div>
+          <div class="png-panel compact"><div class="png-panel-title">Final+Medium dataset · Cost efficiency</div><img class="zoomable" src="Figure/FM_ce_2-1.png" alt="Final plus Medium dataset cost efficiency across multi-step sizes" /></div>
+        </div>
+        <div class="png-panel legend" style="margin-top:14px"><img class="zoomable" src="Figure/legend_3-1.png" alt="Legend for multi-step analysis" /></div>
+        <div class="figure-caption">Achievement and cost efficiency across multi-step return sizes for Final and Final+Medium datasets.</div>
+      </div>
+
+      <div class="results-grid">
+        <div class="card" style="padding:22px">
+          <h3>Ablation: categorical estimation + multi-step return</h3>
+          <div class="table-wrap">
+          <table>
+            <thead><tr><th>Configuration</th><th>Achievement</th><th>Cost eff.</th><th>Reward</th></tr></thead>
+            <tbody>
+              <tr><td><strong>Full method</strong></td><td class="highlight">88.79 ± 0.32</td><td class="highlight">3.06 ± 0.04</td><td class="highlight">13.49 ± 1.04</td></tr>
+              <tr><td>Categorical only</td><td>86.77 ± 0.18</td><td>3.02 ± 0.01</td><td>12.49 ± 0.46</td></tr>
+              <tr><td>Multi-step only</td><td>83.59 ± 0.77</td><td>2.84 ± 0.11</td><td>12.83 ± 1.72</td></tr>
+              <tr><td>Neither</td><td>81.99 ± 0.53</td><td>2.81 ± 0.16</td><td>10.05 ± 1.18</td></tr>
+            </tbody>
+          </table>
+          </div>
+        </div>
+        <div class="card" style="padding:22px">
+          <h3>Performance comparison: offline methods</h3>
+          <div class="table-wrap">
+          <table>
+            <thead><tr><th>Dataset</th><th>Method</th><th>Achievement</th><th>Cost eff.</th><th>Reward</th></tr></thead>
+            <tbody>
+              <tr><td>Final</td><td><strong>Proposed</strong></td><td class="highlight">88.84 ± 0.32</td><td class="highlight">3.06 ± 0.04</td><td class="highlight">13.49 ± 1.04</td></tr>
+              <tr><td>Final</td><td>SAC-based</td><td>86.66 ± 1.51</td><td>2.94 ± 0.02</td><td>10.41 ± 1.42</td></tr>
+              <tr><td>Final</td><td>IQL</td><td>83.59 ± 2.28</td><td>2.81 ± 0.04</td><td>10.05 ± 2.18</td></tr>
+              <tr><td>Final+Medium</td><td><strong>Proposed</strong></td><td class="highlight">83.13 ± 0.50</td><td class="highlight">2.93 ± 0.16</td><td class="highlight">11.38 ± 3.26</td></tr>
+              <tr><td>Final+Medium</td><td>IQL</td><td>69.68 ± 2.71</td><td>2.18 ± 0.19</td><td>-0.54 ± 0.71</td></tr>
+              <tr><td>Final+Medium</td><td>SAC-based</td><td>63.98 ± 2.03</td><td>2.07 ± 0.22</td><td>-1.32 ± 2.09</td></tr>
+            </tbody>
+          </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+
+  <div class="image-modal" id="imageModal" aria-hidden="true">
+    <div class="image-modal-inner">
+      <button class="image-modal-close" type="button" aria-label="Close enlarged figure">×</button>
+      <img id="modalImage" src="" alt="" />
+      <div class="image-modal-caption" id="modalCaption"></div>
+    </div>
+  </div>
+
+  <script>
+    (function(){
+      const nav = document.querySelector('.nav');
+      const updateNav = function(){
+        if(window.scrollY > 10) nav.classList.add('scrolled');
+        else nav.classList.remove('scrolled');
+      };
+      updateNav();
+      window.addEventListener('scroll', updateNav, {passive:true});
+
+      const revealTargets = document.querySelectorAll('section .section-head, .card, .figure-box, .png-panel, .step, .feature, .metric');
+      revealTargets.forEach(function(el, idx){
+        el.classList.add('reveal');
+        el.classList.add('delay-' + ((idx % 4)));
+      });
+
+      if('IntersectionObserver' in window){
+        const observer = new IntersectionObserver(function(entries){
+          entries.forEach(function(entry){
+            if(entry.isIntersecting){
+              entry.target.classList.add('in-view');
+              observer.unobserve(entry.target);
+            }
+          });
+        }, {threshold:0.12, rootMargin:'0px 0px -40px 0px'});
+        revealTargets.forEach(function(el){ observer.observe(el); });
+      } else {
+        revealTargets.forEach(function(el){ el.classList.add('in-view'); });
+      }
+
+      const modal = document.getElementById('imageModal');
+      const modalImage = document.getElementById('modalImage');
+      const modalCaption = document.getElementById('modalCaption');
+      const closeButton = modal.querySelector('.image-modal-close');
+
+      function openModal(img){
+        modalImage.src = img.src;
+        modalImage.alt = img.alt || 'Enlarged figure';
+        const caption = img.closest('.figure-box, .png-panel')?.querySelector('.figure-caption, .png-panel-title');
+        modalCaption.textContent = caption ? caption.textContent.trim() : (img.alt || '');
+        modal.classList.add('open');
+        modal.setAttribute('aria-hidden', 'false');
+      }
+
+      function closeModal(){
+        modal.classList.remove('open');
+        modal.setAttribute('aria-hidden', 'true');
+        modalImage.src = '';
+      }
+
+      document.querySelectorAll('img.zoomable').forEach(function(img){
+        img.addEventListener('click', function(){ openModal(img); });
+      });
+      closeButton.addEventListener('click', closeModal);
+      modalImage.addEventListener('click', closeModal);
+      modal.addEventListener('click', function(event){
+        if(event.target === modal) closeModal();
+      });
+      document.addEventListener('keydown', function(event){
+        if(event.key === 'Escape' && modal.classList.contains('open')) closeModal();
+      });
+    })();
+  </script>
+
+</body>
+</html>
